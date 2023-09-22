@@ -28,8 +28,8 @@ export class Lexer {
 		const next = (): string | null => {
 			return input[i++] ?? null;
 		};
-		const peek = (n = 0): string | null => {
-			return input[i+n] ?? null;
+		const peek = (n = 1): string | null => {
+			return input[i+n-1] ?? null;
 		}
 
 		let id = "";
@@ -37,13 +37,13 @@ export class Lexer {
 			if (x === null || x == " " || x == "\t" || x == "\n") return;
 			id += x;
 		}
-		const push_id = () => {
+		const flush_id = () => {
 			if (id != "") {
 				if (/\d/.test(id[0])) { // if you start with a digit
-					if (id.match(/\d+/)?.at(0)?.length != id.length) {
+					if (id.match(/\d+(\.\d*)?/)?.at(0)?.length != id.length) {
 						throw new Error("cannot start identifier name with number");
 					}
-					this.tokens.push({ tag: "number", value: parseInt(id) });
+					this.tokens.push({ tag: "number", value: parseFloat(id) });
 				} else {
 					this.tokens.push({ tag: "identifier", value: id })
 				}
@@ -53,7 +53,7 @@ export class Lexer {
 		}
 
 		const push_and_flush = (t: Token) => {
-			push_id();
+			flush_id();
 			this.tokens.push(t);
 		};
 
@@ -69,19 +69,27 @@ export class Lexer {
 			} else if (c == "|" && peek() == ">") {
 				next();
 				push_and_flush({ tag: 'pipeline' });
-			} else if (c == "-" && peek() == ">" && peek(1) == ">") {
+			} else if (c == "-" && peek() == ">" && peek(2) == ">") {
 				next();
 				next();
 				push_and_flush({ tag: 'mutate' });
 			} else if (c == "-" && peek() == ">") {
 				next();
 				push_and_flush({ tag: 'assign' });
+			} else if (c == "-" && peek() == "-") { // comment
+				next();
+				flush_id();
+
+				let n = next();
+				while (n != '\n' && n != null) {
+					n = next();
+				}
 			} else {
 				add_id(c);
 			}
 		}
 
-		if (id != "") this.tokens.push({ tag: 'identifier', value: id });
+		flush_id();
 
 		this.tokens.reverse();
 	}
