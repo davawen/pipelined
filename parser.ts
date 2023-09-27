@@ -6,9 +6,9 @@ export interface Expr<T extends ExprNode = ExprNode> {
 	node: T
 }
 
-export type ExprNode = ExprInt | ExprString | ExprVariable | ExprLambda | ExprTuple | ExprPipeline | ExprAssign | ExprMutate;
+export type ExprNode = ExprNumber | ExprString | ExprVariable | ExprLambda | ExprTuple | ExprPipeline | ExprAssign | ExprMutate;
 
-export type ExprInt = ExprLiteral<number, "int">;
+export type ExprNumber = ExprLiteral<number, "number">;
 export type ExprString = ExprLiteral<string, "string">;
 export type ExprVariable = ExprLiteral<string, "variable">;
 export type ExprTuple = ExprLiteral<Expr[], "tuple">;
@@ -115,7 +115,7 @@ function parse_value(lexer: Lexer): Expr {
 		lexer.next();
 		return {
 			location: t.loc,
-			node: { tag: 'int', value: t.value }
+			node: { tag: 'number', value: t.value }
 		};
 	} else throw new Error("no expression");
 }
