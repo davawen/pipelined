@@ -1,4 +1,4 @@
-import { Location, location_default } from './location.ts';
+import { Location } from './location.ts';
 import { Lexer, IdentToken } from './lexer.ts';
 
 export interface Expr<T extends ExprNode = ExprNode> {
@@ -36,13 +36,13 @@ interface ExprBinary<A, B, Op> {
 function parse_variable(lexer: Lexer): Expr<ExprVariable> {
 	const t = lexer.expect('identifier') as IdentToken;
 	return {
-		location: location_default(),
+		location: t.loc,
 		node: { tag: 'variable', value: t.value }
 	}
 }
 
 function parse_tuple(lexer: Lexer): Expr<ExprTuple> {
-	lexer.expect('lparen');
+	const location = lexer.expect('lparen').loc;
 
 	const value: Expr[] = [];
 	if (lexer.peek().tag != 'rparen') {
@@ -55,7 +55,7 @@ function parse_tuple(lexer: Lexer): Expr<ExprTuple> {
 	lexer.expect('rparen');
 
 	return {
-		location: location_default(),
+		location,
 		node: {
 			tag: 'tuple',
 			value
@@ -78,7 +78,7 @@ function is_lambda(lexer: Lexer): boolean {
 }
 
 function parse_lambda(lexer: Lexer): Expr<ExprLambda> {
-	lexer.expect('lparen');
+	const location = lexer.expect('lparen').loc;
 	const args: Expr<ExprVariable>[] = [];
 	if (lexer.peek().tag != 'rparen') {
 		args.push(parse_variable(lexer));
@@ -93,7 +93,7 @@ function parse_lambda(lexer: Lexer): Expr<ExprLambda> {
 	const body = parse_expr(lexer);
 
 	return {
-		location: location_default(),
+		location,
 		node: {
 			tag: 'lambda',
 			args, body
@@ -114,7 +114,7 @@ function parse_value(lexer: Lexer): Expr {
 	else if (t.tag == 'number') {
 		lexer.next();
 		return {
-			location: location_default(),
+			location: t.loc,
 			node: { tag: 'int', value: t.value }
 		};
 	} else throw new Error("no expression");
@@ -127,7 +127,7 @@ export function parse_expr(lexer: Lexer): Expr {
 		if (t.tag == 'pipeline') {
 			lexer.next();
 			p = {
-				location: location_default(),
+				location: t.loc,
 				node: {
 					tag: 'binary',
 					op: 'pipeline',
@@ -138,7 +138,7 @@ export function parse_expr(lexer: Lexer): Expr {
 		} else if (t.tag == 'assign' || t.tag == 'mutate') {
 			lexer.next();
 			p = {
-				location: location_default(),
+				location: t.loc,
 				node: {
 					tag: 'binary',
 					op: t.tag,
@@ -180,7 +180,7 @@ export function print_ast(e: Expr) {
 		}
 
 		return s.map((line, idx) => {
-			if (idx == 0) return line;
+			if (idx == 0) return `${e.location.line}:${e.location.col}:${line}`;
 			if (idx < last_index) return `\x1b[90m│\x1b[0m ${line}`;
 			else if (idx == last_index) return `\x1b[90m╰\x1b[0m ${line}`;
 			else return `  ${line}`;

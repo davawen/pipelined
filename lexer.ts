@@ -32,13 +32,18 @@ export class Lexer {
 		this.tokens = [];
 
 		let i = 0;
-		const loc: Location = { line: 1, col: 1 };
+		const loc: Location = { line: 1, col: 0 };
+		const next_loc: Location = { line: 1, col: 1 };
 		const next = (): string | null => {
 			const c = input[i++] ?? null;
+
+			loc.line = next_loc.line;
+			loc.col = next_loc.col;
+
 			if (c == '\n') {
-				loc.line += 1;
-				loc.col = 1;
-			} else if (c != null) loc.col += 1;
+				next_loc.line += 1;
+				next_loc.col = 1;
+			} else if (c != null) next_loc.col += 1;
 			return c;
 		};
 		const peek = (n = 1): string | null => {

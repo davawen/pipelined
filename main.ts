@@ -19,8 +19,10 @@ if (import.meta.main) {
 `;
 
 	const lexer = new Lexer(input);
-	const root = parse_expr(lexer);
 
 	console.log(`from input: \`${input}\``);
+	lexer.show();
+
+	const root = parse_expr(lexer);
 	print_ast(root);
 }
