@@ -1,4 +1,4 @@
-import { Expr, ExprLambda, ExprVariable } from "../parser.ts"
+import { Expr } from "../parser.ts"
 
 export type Value = ValueNumber | ValueString | ValueBoolean | ValueTuple | ValueLambda;
 export interface ValueNumber {

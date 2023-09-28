@@ -125,6 +125,12 @@ function parse_value(lexer: Lexer): Expr {
 			location: t.loc,
 			node: { tag: 'number', value: t.value }
 		};
+	} else if (t.tag == 'string') {
+		lexer.next();
+		return {
+			location: t.loc,
+			node: { tag: 'string', value: t.value }
+		};
 	} else throw new Error(`expected a value, got ${t.tag}`);
 }
 

@@ -25,17 +25,21 @@ function interpret_tuple_value(ast: Expr, scope: Scope): Value[] {
 	else throw new Error("unreachable");
 }
 
+export function call_lambda(f: ValueLambda, args: Value[]): Value[] {
+	if (f.arguments.length != args.length) throw new Error(`expected ${arguments.length} arguments, got ${args.length}`);
+
+	const s = new Scope(f.scope);
+	f.arguments.map((a, i) => s.add(a, [args[i]]));
+	return interpret(f.value, s);
+}
 
 function call(f: ExprVariable, args: Value[], scope: Scope): Value[] {
 	const lambda = scope.get_some(f.value);
 	if (lambda != null) {
 		if (lambda.length != 1 || lambda[0].tag != 'lambda') throw new Error(`expected function, got ${lambda}`);
 		const f = lambda[0];
-		if (f.arguments.length != args.length) throw new Error(`expected ${arguments.length} arguments, got ${args.length}`);
 
-		const s = new Scope(f.scope);
-		f.arguments.map((a, i) => s.add(a, [args[i]]));
-		return interpret(f.value, s);
+		return call_lambda(f, args);
 	}
 
 	const builtin = builtins[f.value];

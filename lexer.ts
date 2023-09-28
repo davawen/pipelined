@@ -10,7 +10,9 @@ export type Token = Lit<"lparen">
 	| Lit<"shorthand">
 	| IdentToken
 	| NumberToken
+	| StringToken
 	| BooleanToken;
+
 export interface Lit<Tag> {
 	loc: Location,
 	tag: Tag
@@ -24,6 +26,11 @@ export interface NumberToken {
 	loc: Location,
 	tag: "number",
 	value: number
+}
+export interface StringToken {
+	loc: Location,
+	tag: "string",
+	value: string
 }
 export interface BooleanToken {
 	loc: Location,
@@ -74,9 +81,9 @@ export class Lexer {
 			}
 		}
 
-		const add_id = (x: string | null) => {
-			if (x === null || x == " " || x == "\t" || x == "\n") return flush_id();
-			id += x;
+		const add_id = (c: string | null) => {
+			if (c === null || c == " " || c == "\t" || c == "\n") return flush_id();
+			id += c;
 		}
 
 		const push_and_flush = (t: Token) => {
@@ -84,9 +91,48 @@ export class Lexer {
 			this.tokens.push(t);
 		};
 
+		let str: string | null = null;
+		const str_push_char = (c: string | null) => {
+			if (c == null) throw new Error("input finished inside of string literal");
+			else if (c == '\\') {
+				c = next();
+				if (c == null) throw new Error("input finished inside of escape sequence");
+				else if (c == 'a') str += '\a';
+				else if (c == 'b') str += '\b';
+				else if (c == 'e') str += String.fromCharCode(0x1b);
+				else if (c == 'f') str += '\f';
+				else if (c == 'n') str += '\n';
+				else if (c == 'r') str += '\r';
+				else if (c == 't') str += '\t';
+				else if (c == 'v') str += '\v';
+				else if (c == '\\') str += '\\';
+				else if (c == '"') str += '"';
+				else if (c == 'x') {
+					const [a, b] = [ next(), next() ];
+					if (a == null || b == null) throw new Error("input finished inside of escape sequence");
+					str += String.fromCharCode(parseInt(a + b, 16));
+				}
+				else throw new Error("unknown escape sequence");
+			}
+			else if (c == '"') {
+				this.tokens.push({
+					loc: Object.assign({}, loc),
+					tag: 'string',
+					value: str as string
+				});
+				str = null;
+			} 
+			else str += c;
+		}
+
 		let c;
 		while ((c = next()) != null) {
-			if (c == '(') push_and_flush({ loc: Object.assign({}, loc), tag: 'lparen' });
+			if (str != null) str_push_char(c);
+			else if (c == '"') {
+				flush_id();
+				str = "";
+			}
+			else if (c == '(') push_and_flush({ loc: Object.assign({}, loc), tag: 'lparen' });
 			else if (c == ')') push_and_flush({ loc: Object.assign({}, loc), tag: 'rparen' });
 			else if (c == ',') push_and_flush({ loc: Object.assign({}, loc), tag: 'comma' });
 			else if (c == '_' && id == "") push_and_flush({ loc: Object.assign({}, loc), tag: "shorthand" });
