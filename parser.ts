@@ -6,9 +6,10 @@ export interface Expr<T extends ExprNode = ExprNode> {
 	node: T
 }
 
-export type ExprNode = ExprNumber | ExprString | ExprVariable | ExprLambda | ExprTuple | ExprPipeline | ExprAssign | ExprMutate;
+export type ExprNode = ExprNumber | ExprString | ExprBoolean | ExprVariable | ExprLambda | ExprTuple | ExprPipeline | ExprAssign | ExprMutate;
 
 export type ExprNumber = ExprLiteral<number, "number">;
+export type ExprBoolean = ExprLiteral<boolean, "boolean">;
 export type ExprString = ExprLiteral<string, "string">;
 export type ExprVariable = ExprLiteral<string, "variable">;
 export type ExprTuple = ExprLiteral<Expr[], "tuple">;
@@ -111,13 +112,20 @@ function parse_value(lexer: Lexer): Expr {
 
 	if (t.tag == 'lparen') return parse_tuple_or_lambda(lexer);
 	else if (t.tag == 'identifier') return parse_variable(lexer);
+	else if (t.tag == 'boolean') {
+		lexer.next();
+		return {
+			location: t.loc,
+			node: { tag: 'boolean', value: t.value }
+		}
+	}
 	else if (t.tag == 'number') {
 		lexer.next();
 		return {
 			location: t.loc,
 			node: { tag: 'number', value: t.value }
 		};
-	} else throw new Error("no expression");
+	} else throw new Error(`expected a value, got ${t.tag}`);
 }
 
 export function parse_expr(lexer: Lexer): Expr {

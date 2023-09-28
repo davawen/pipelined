@@ -9,7 +9,8 @@ export type Token = Lit<"lparen">
 	| Lit<"comma">
 	| Lit<"shorthand">
 	| IdentToken
-	| NumberToken;
+	| NumberToken
+	| BooleanToken;
 export interface Lit<Tag> {
 	loc: Location,
 	tag: Tag
@@ -23,6 +24,11 @@ export interface NumberToken {
 	loc: Location,
 	tag: "number",
 	value: number
+}
+export interface BooleanToken {
+	loc: Location,
+	tag: "boolean",
+	value: boolean
 }
 
 export class Lexer {
@@ -58,6 +64,8 @@ export class Lexer {
 						throw new Error("cannot start identifier name with number");
 					}
 					this.tokens.push({ loc: Object.assign({}, loc), tag: "number", value: parseFloat(id) });
+				} else if (id == "false" || id == "true") {
+					this.tokens.push({ loc: Object.assign({}, loc), tag: 'boolean', value: id == "false" ? false : true })
 				} else {
 					this.tokens.push({ loc: Object.assign({}, loc), tag: "identifier", value: id })
 				}
